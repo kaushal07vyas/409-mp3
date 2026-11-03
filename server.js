@@ -161,14 +161,21 @@ async function getDocument(Model, req, res) {
   send(res, 200, result);
 }
 
+
 async function verifyPendingTasks(ids, session) {
   if (!ids.length) return;
-  const tasks = await Task.find({ _id: { $in: ids } }).session(session);
-  // Validation errors take priority over missing references when both occur.
+
+  const tasks = await Task.find({
+    _id: { $in: ids }
+  }).session(session);
+
+  if (tasks.length !== ids.length) {
+    fail(404, 'One or more referenced tasks do not exist.');
+  }
+
   if (tasks.some(task => task.completed)) {
     fail(400, 'A completed task cannot be included in pendingTasks.');
   }
-  if (tasks.length !== ids.length) fail(404, 'One or more referenced tasks do not exist.');
 }
 
 async function verifyEmailAvailable(email, exceptId, session) {
